@@ -10,6 +10,7 @@ namespace ZipBreaker
         {
             string wList = "./wordlist.txt";
             string zFile = "./test.zip";
+            string tmp = "./tmp";
             try
             {
                 WordList wordList = new WordList(wList);
@@ -20,7 +21,7 @@ namespace ZipBreaker
                     Console.WriteLine("Testing {0}", line);
                     try
                     {
-                        ZipTester.ExtractZipContent(zipFile, line, "./tmp");
+                        ZipTester.ExtractZipContent(zipFile, line, tmp);
                         Console.WriteLine("Password found: {0}", line);
                         break;
                     }
@@ -28,6 +29,7 @@ namespace ZipBreaker
                     {
                         if (e.Message.Equals("Invalid password"))
                         {
+                            wordList.addCheckedWord(line);
                             continue;
                         }
 
@@ -37,7 +39,8 @@ namespace ZipBreaker
             }
             catch (IOException e)
             {
-                Console.WriteLine(e.ToString());
+                Console.WriteLine(e.Message);
+                Console.WriteLine(e.StackTrace);
             }
         }
     }
