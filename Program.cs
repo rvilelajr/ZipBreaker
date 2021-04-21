@@ -19,6 +19,7 @@ namespace ZipBreaker
                 foreach (string line in wordList.NextWord())
                 {
                     Console.WriteLine("Testing {0}", line);
+                    Console.WriteLine($"{wordList.percentage:P2}");
                     try
                     {
                         ZipTester.ExtractZipContent(zipFile, line, tmp);

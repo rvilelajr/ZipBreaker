@@ -7,13 +7,23 @@ namespace ZipBreaker
 {
     public class WordList
     {
-        private TextReader fileReader;
-        private TextWriter checkedWordsFile;
+        private StreamReader fileReader;
+        private string checkedWordsFile;
+        public long fileSize { get; set; }
+        public long bytesRead { get; set; }
+        public double percentage
+        {
+            get { return (double)bytesRead / fileSize; }
+        }
+
         public WordList(string file)
         {
+            this.bytesRead = 0;
+            this.checkedWordsFile = $"checked-{Path.GetFileNameWithoutExtension(file)}.tmp";
             try
             {
                 this.fileReader = new StreamReader(file);
+                this.fileSize = (new FileInfo(file)).Length;
                 this.MoveToLastWord(file);
             }
             catch (FileNotFoundException notFound)
@@ -25,11 +35,10 @@ namespace ZipBreaker
         private void MoveToLastWord(string file)
         {
             string lastWord = null;
-            string f = $"checked-{Path.GetFileNameWithoutExtension(file)}.tmp";
 
             try
             {
-                lastWord = File.ReadLines(f).Last();
+                lastWord = File.ReadLines(this.checkedWordsFile).Last();
                 foreach (string w in NextWord())
                 {
                     if (lastWord == w)
@@ -37,30 +46,41 @@ namespace ZipBreaker
                         break;
                     }
                 }
-                this.checkedWordsFile = new StreamWriter(f, true);
             }
             catch (System.Exception)
             {
-                this.checkedWordsFile = new StreamWriter(f, true);
+                TextWriter f = new StreamWriter(this.checkedWordsFile, true);
+                f.Close();
+
             }
         }
 
 
         public IEnumerable<string> NextWord()
         {
-            string currentLine;
-            while ((currentLine = this.fileReader.ReadLine()) != null)
+            string currentLine = null;
+            int c;
+            while (!this.fileReader.EndOfStream)
             {
-                yield return currentLine;
+                this.bytesRead += 1;
+                c = this.fileReader.Read();
+                currentLine += (char)c;
+                if ((char)c == '\n' || this.fileReader.EndOfStream)
+                {
+                    yield return currentLine.TrimEnd();
+                    currentLine = null;
+                }
             }
-            this.checkedWordsFile.Close();
         }
 
         public void addCheckedWord(string word)
         {
             try
             {
-                this.checkedWordsFile.WriteLine(word);
+                using (StreamWriter f = File.AppendText(this.checkedWordsFile))
+                {
+                    f.WriteLine(word);
+                }
             }
             catch (System.Exception)
             {
